@@ -21,13 +21,13 @@ const Menuitems = [
     },
     {
         id: uniqueId(),
-        title: "Typography",
+        title: "Create Transaction",
         icon: NoteAddIcon,
         href: "/transaction/create",
     },
     {
         id: uniqueId(),
-        title: "Shadow",
+        title: "Transaction List",
         icon: LibraryBooksIcon,
         href: "/transactions",
     },

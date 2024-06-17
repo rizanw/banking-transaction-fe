@@ -13,13 +13,16 @@
     "@emotion/styled": "^11.11.5",
     "@mui/icons-material": "^5.15.20",
     "@mui/material": "^5.15.20",
+    "@mui/x-date-pickers": "^7.7.0",
     "lodash": "^4.17.21",
+    "moment": "^2.30.1",
     "mui-tel-input": "^5.1.2",
     "next": "14.2.4",
     "next-auth": "^4.24.7",
     "react": "^18",
     "react-dom": "^18",
-    "react-helmet-async": "^2.0.5"
+    "react-helmet-async": "^2.0.5",
+    "react-mui-fileuploader": "^0.5.2"
   },
   "devDependencies": {
     "@types/lodash": "^4.17.5",
