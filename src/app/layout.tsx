@@ -5,14 +5,16 @@ import {ThemeProvider} from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 import "./globals.css";
 
-export default function RootLayout({
-                                       children,
-                                   }: Readonly<{
+interface Props {
+    children: React.ReactNode;
+}
+
+export default function RootLayout({children}: Readonly<{
     children: React.ReactNode;
 }>) {
     return (
-        <html lang="en">
-        <body>
+        <html lang="en" suppressHydrationWarning={true}>
+        <body suppressHydrationWarning={true}>
         <ThemeProvider theme={baselightTheme}>
             <CssBaseline/>
             <SessionProvider>

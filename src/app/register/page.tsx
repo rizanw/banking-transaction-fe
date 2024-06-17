@@ -1,16 +1,18 @@
 "use client";
-import {Grid, Box, Card, Typography, Stack} from "@mui/material";
+import {Grid, Box, Card, Typography, Stack, Alert} from "@mui/material";
 import Link from "next/link";
 import PageContainer from "@/components/containers/PageContainer";
 import AuthRegister from "@/components/pages/auth/AuthRegister";
 import {useRouter} from "next/navigation";
-import {FormEvent, useEffect} from "react";
+import {FormEvent, useEffect, useState} from "react";
 import {useSession} from "next-auth/react";
 import LoadingPage from "@/components/pages/LoadingPage";
 
 const Register = () => {
     const router = useRouter();
     const {data: session, status} = useSession();
+    const [isError, setError] = useState(false);
+    const [alertMsg, setAlertMsg] = useState("");
 
     useEffect(() => {
         if (status === "authenticated") {
@@ -24,22 +26,37 @@ const Register = () => {
         const formData = new FormData(event.currentTarget)
         const username = formData.get('username')
         const password = formData.get('password')
-        const phone = formData.get('phone')
+        const phoneField = formData.get('phone')
         const email = formData.get('email')
         const role = formData.get('role')
+        const corpnum = formData.get('corp-num')
+        let phone = String(phoneField).split(" ")[0].replace(/\D/g, "") + "." + String(phoneField).split(" ").slice(1).join("")
 
-        const response = await fetch('/api/auth/register', {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/register`, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({username, password}),
+            body: JSON.stringify({
+                username: username,
+                password: password,
+                email: email,
+                phone: phone,
+                role: Number(role),
+                corporate_account_number: corpnum,
+            }),
         })
 
-        console.log(response, username, password, email, phone, role)
-        // if (response.ok) {
-        //     router.push('/login')
-        // } else {
-        //     console.log(response)
-        // }
+        if (response.ok) {
+            setError(false);
+            setAlertMsg("User registered successfully!");
+        } else {
+            setError(true);
+            let msg = await response.text()
+            if (msg == "") {
+                let data = await response.json();
+                msg = data.message;
+            }
+            setAlertMsg(msg)
+        }
     }
 
     if (status === "loading") {
@@ -87,6 +104,8 @@ const Register = () => {
                             </Box>
                             <form onSubmit={handleSubmit}>
                                 <AuthRegister
+                                    isError={isError}
+                                    message={alertMsg}
                                     subtext={
                                         <Typography
                                             variant="subtitle1"

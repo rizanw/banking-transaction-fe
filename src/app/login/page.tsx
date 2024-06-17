@@ -31,8 +31,8 @@ const Login = () => {
             username,
             password
         })
-        console.log(result, username, password)
         if (result?.error) {
+            console.log(result)
             setError(result.error);
         } else {
             router.push("/");
