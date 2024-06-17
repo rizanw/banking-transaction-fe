@@ -1,5 +1,16 @@
 import React, {useEffect, useState} from "react";
-import {Dialog, DialogContent, DialogContentText, DialogTitle, Grid} from "@mui/material";
+import {
+    Dialog,
+    DialogContent,
+    DialogContentText,
+    DialogTitle,
+    Grid,
+    Paper,
+    Table, TableBody, TableCell,
+    TableContainer,
+    TableHead, TablePagination,
+    TableRow
+} from "@mui/material";
 import {useSession} from "next-auth/react";
 import LoadingPage from "@/components/pages/LoadingPage";
 
@@ -91,50 +102,88 @@ const TransactionDetailModal = ({transactionID, open, onClose}: TransactionDetai
         >
             <DialogTitle>Transaction Detail</DialogTitle>
             <DialogContent>
-                <Grid container spacing={2}>
+                <Grid container spacing={2} mb={"12px"}>
                     <Grid item xs={6}>
                         <DialogContentText>
-                            From Account No.: {transactionData?.from_account_num}
+                            From Account No.: <b>{transactionData?.from_account_num}</b>
                         </DialogContentText>
                     </Grid>
                     <Grid item xs={6}>
                         <DialogContentText>
-                            Maker: {transactionData?.maker}
+                            Maker: <b>{transactionData?.maker}</b>
                         </DialogContentText>
                     </Grid>
                     <Grid item xs={6}>
                         <DialogContentText>
-                            Submit Date&Time: {transactionData?.submit_datetime}
+                            Submit Date&Time: <b>{transactionData?.submit_datetime}</b>
                         </DialogContentText>
                     </Grid>
                     <Grid item xs={6}>
                         <DialogContentText>
-                            Reference No.: {transactionData?.ref_num}
+                            Reference No.: <b>{transactionData?.ref_num}</b>
                         </DialogContentText>
                     </Grid>
                     <Grid item xs={6}>
                         <DialogContentText>
-                            Transfer Date: {transactionData?.transfer_date}
+                            Transfer Date: <b>{transactionData?.transfer_date}</b>
                         </DialogContentText>
                     </Grid>
                     <Grid item xs={6}>
                         <DialogContentText>
-                            Instruction Type: {transactionData?.instruction_type}
+                            Instruction Type: <b>{transactionData?.instruction_type}</b>
+                        </DialogContentText>
+                    </Grid>
+                    <Grid item xs={6}>
+                        <DialogContentText>
+                            Total Transfer Record: <b>{transactionData?.total_record}</b>
+                        </DialogContentText>
+                    </Grid>
+                    <Grid item xs={6}>
+                        <DialogContentText>
+                            Total Transfer Amount: <b>{transactionData?.total_amount}</b>
                         </DialogContentText>
                     </Grid>
                 </Grid>
-                <Grid container spacing={2} mt={2}>
-                    <Grid item xs={6}>
-                        <DialogContentText>
-                            Total Transfer Record: {transactionData?.total_record}
-                        </DialogContentText>
-                    </Grid>
-                    <Grid item xs={6}>
-                        <DialogContentText>
-                            Total Transfer Amount: {transactionData?.total_amount}
-                        </DialogContentText>
-                    </Grid>
-                </Grid>
+                <TableContainer component={Paper}>
+                    <Table>
+                        <TableHead>
+                            <TableRow>
+                                <TableCell>No.</TableCell>
+                                <TableCell>Account Number</TableCell>
+                                <TableCell>Account Name</TableCell>
+                                <TableCell>Bank</TableCell>
+                                <TableCell>Amount</TableCell>
+                                <TableCell>Status</TableCell>
+                            </TableRow>
+                        </TableHead>
+                        <TableBody>
+                            {transactionData?.data ? (transactionData?.data.map((transaction, idx) => (
+                                <TableRow key={transaction.id}>
+                                    <TableCell>{idx + 1}</TableCell>
+                                    <TableCell>{transaction.to_account_num}</TableCell>
+                                    <TableCell>{transaction.to_account_name}</TableCell>
+                                    <TableCell>{transaction.to_account_bank}</TableCell>
+                                    <TableCell>{transaction.amount}</TableCell>
+                                    <TableCell>{transaction.status}</TableCell>
+                                </TableRow>
+                            ))) : (
+                                <TableRow>
+                                    <TableCell colSpan={8} align="center">
+                                        No Data
+                                    </TableCell>
+                                </TableRow>
+                            )}
+                        </TableBody>
+                    </Table>
+                </TableContainer>
+                <TablePagination
+                    component="div"
+                    count={total}
+                    page={pageNum}
+                    onPageChange={handleChangePage}
+                    rowsPerPage={rowsPerPage}
+                    rowsPerPageOptions={[rowsPerPage]}
+                />
             </DialogContent>
         </Dialog>
     )
