@@ -16,9 +16,9 @@ import CheckCircleOutlinedIcon from '@mui/icons-material/CheckCircleOutlined';
 import CancelOutlinedIcon from '@mui/icons-material/CancelOutlined';
 import TransactionDetailModal from "@/components/widgets/TransactionDetailModal";
 import AuditTransactionModal from "@/components/widgets/AuditTransactionModal";
-import {fetchData, postData} from "@/utils/api/apiService";
+import {postData} from "@/utils/api/apiService";
 
-interface TransactionData {
+export interface TransactionData {
     id: number;
     ref_num: string;
     total_transfer_amount: number;
@@ -29,13 +29,17 @@ interface TransactionData {
     status: string;
 }
 
-const TransactionTable: React.FC = () => {
+type TransactionTableProps = {
+    data: TransactionData[];
+    totalData: number;
+    page: number;
+    perPage: number;
+    onPageChange: (event: React.MouseEvent<HTMLButtonElement> | null, page: number) => void
+    loading?: boolean;
+}
+
+const TransactionTable = ({data, totalData, page, perPage, onPageChange, loading}: TransactionTableProps) => {
     const {data: session, status} = useSession();
-    const [transactionData, setTransactionData] = useState<TransactionData[]>([]);
-    const [total, setTotal] = useState(0);
-    const [pageNum, setPageNum] = useState(0);
-    const [rowsPerPage, setRowsPerPage] = useState(10);
-    const [loading, setLoading] = useState(true);
     const role = session?.user?.role as number
     const [openDetailModal, setOpenDetailModal] = useState<boolean>(false)
     const handleOpenDetailModal = (id: React.SetStateAction<number>) => {
@@ -55,46 +59,18 @@ const TransactionTable: React.FC = () => {
         setTransactionID(0)
     };
 
-    const loadData = async (page: number, perPage: number) => {
-        setLoading(true);
-        try {
-            fetchData(`/transactions?page=${page}&per_page=${perPage}`, true).then(
-                response => {
-                    setTransactionData(response.data)
-                    setTotal(response.total);
-                }
-            )
-        } catch (error) {
-            console.error('Fetch error:', error);
-        } finally {
-            setLoading(false)
-        }
-    };
-
     const auditTransaction = async (trxID: number, action: string) => {
-        setLoading(true);
         try {
             postData(`/transaction/${trxID}/audit?action=${action}`, {}, true).then(
                 response => {
                     setAlertMsg(trxRefNum + ": " + response.message)
                     handleCloseAuditModal()
-                    loadData(pageNum + 1, rowsPerPage)
                 }
             )
         } catch (error) {
             console.error('Post error:', error);
-        } finally {
-            setLoading(false)
         }
     }
-
-    useEffect(() => {
-        loadData(pageNum + 1, rowsPerPage);
-    }, [pageNum, rowsPerPage]);
-
-    const handleChangePage = (event: unknown, newPage: number) => {
-        setPageNum(newPage);
-    };
 
     return (
         <Paper>
@@ -109,7 +85,7 @@ const TransactionTable: React.FC = () => {
                 <Table>
                     <TableHead>
                         <TableRow>
-                            <TableCell>Reference Number</TableCell>
+                            <TableCell>Reference No.</TableCell>
                             <TableCell>Total Transfer Amount</TableCell>
                             <TableCell>Total Transfer Record</TableCell>
                             <TableCell>From Account No</TableCell>
@@ -125,7 +101,7 @@ const TransactionTable: React.FC = () => {
                                     Loading...
                                 </TableCell>
                             </TableRow>
-                        ) : transactionData ? (transactionData.map((row) => (
+                        ) : data ? (data.map((row) => (
                             <TableRow key={row.id}>
                                 <TableCell>{row.ref_num}</TableCell>
                                 <TableCell>{row.total_transfer_amount}</TableCell>
@@ -183,11 +159,11 @@ const TransactionTable: React.FC = () => {
             </TableContainer>
             <TablePagination
                 component="div"
-                count={total}
-                page={pageNum}
-                onPageChange={handleChangePage}
-                rowsPerPage={rowsPerPage}
-                rowsPerPageOptions={[rowsPerPage]}
+                count={totalData}
+                page={page}
+                onPageChange={onPageChange}
+                rowsPerPage={perPage}
+                rowsPerPageOptions={[perPage]}
             />
             {
                 transactionID ? (<TransactionDetailModal transactionID={transactionID} open={openDetailModal}

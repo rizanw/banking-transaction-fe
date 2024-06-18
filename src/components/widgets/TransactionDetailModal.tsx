@@ -133,7 +133,7 @@ const TransactionDetailModal = ({transactionID, open, onClose}: TransactionDetai
                         <TableHead>
                             <TableRow>
                                 <TableCell>No.</TableCell>
-                                <TableCell>Account Number</TableCell>
+                                <TableCell>Account No.</TableCell>
                                 <TableCell>Account Name</TableCell>
                                 <TableCell>Bank</TableCell>
                                 <TableCell>Amount</TableCell>

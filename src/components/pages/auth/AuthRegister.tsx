@@ -1,10 +1,12 @@
 import React, {useEffect, useState} from 'react';
-import {Box, Typography, Button, MenuItem, Alert} from '@mui/material';
+import {Box, Typography, Button, MenuItem, Alert, InputAdornment, IconButton} from '@mui/material';
 import CustomTextField from '../../forms/CustomTextField';
 import {Stack} from '@mui/system';
 import {MuiTelInput} from "mui-tel-input";
 import Select, {SelectChangeEvent} from '@mui/material/Select';
 import {fetchData} from "@/utils/api/apiService";
+import Visibility from '@mui/icons-material/Visibility';
+import VisibilityOff from '@mui/icons-material/VisibilityOff';
 
 interface registerType {
     title?: string;
@@ -25,6 +27,12 @@ const AuthRegister = ({title, subtitle, subtext, isError, message}: registerType
     const [roleField, setRoleField] = useState("");
     const [corpData, setCorpData] = useState<corporation[]>([])
     const [corpField, setCorpField] = useState("");
+    const [showPassword, setShowPassword] = React.useState(false);
+
+    const handleClickShowPassword = () => setShowPassword((show) => !show);
+    const handleMouseDownPassword = (event: React.MouseEvent<HTMLButtonElement>) => {
+        event.preventDefault();
+    };
 
     const handlePhoneChange = (value: any) => {
         setPhoneField(value);
@@ -74,7 +82,7 @@ const AuthRegister = ({title, subtitle, subtext, isError, message}: registerType
                                     fontWeight={600} component="label" htmlFor='corp-num' mb="5px">
                             Corporate Account No.
                         </Typography>
-                        <Select id="corp-num" name="corp-num" onChange={handleCorpChange} value={corpField}>
+                        <Select required id="corp-num" name="corp-num" onChange={handleCorpChange} value={corpField}>
                             {corpData.map((item: corporation) => (
                                     <MenuItem key={item.id} value={item.account_num}>
                                         {item.account_num} ({item.name})
@@ -87,13 +95,14 @@ const AuthRegister = ({title, subtitle, subtext, isError, message}: registerType
                                     fontWeight={600} component="label" htmlFor='username' mb="5px" mt="25px">
                             User Name
                         </Typography>
-                        <CustomTextField id="username" type="text" name="username" variant="outlined" fullWidth/>
+                        <CustomTextField required id="username" type="text" name="username" variant="outlined"
+                                         fullWidth/>
 
                         <Typography variant="subtitle1"
                                     fontWeight={600} component="label" htmlFor='role' mb="5px" mt="25px">
                             Role
                         </Typography>
-                        <Select id="role" name="role" onChange={handleRoleChange} value={roleField}>
+                        <Select required id="role" name="role" onChange={handleRoleChange} value={roleField}>
                             <MenuItem value={1}>Maker</MenuItem>
                             <MenuItem value={2}>Approver</MenuItem>
                         </Select>
@@ -102,7 +111,7 @@ const AuthRegister = ({title, subtitle, subtext, isError, message}: registerType
                                     fontWeight={600} component="label" htmlFor='phone' mb="5px" mt="25px">
                             Phone No.
                         </Typography>
-                        <MuiTelInput id="phone" name="phone" value={phoneField} onChange={handlePhoneChange}
+                        <MuiTelInput required id="phone" name="phone" value={phoneField} onChange={handlePhoneChange}
                                      defaultCountry="ID"
                                      variant="outlined"/>
 
@@ -110,12 +119,27 @@ const AuthRegister = ({title, subtitle, subtext, isError, message}: registerType
                                     fontWeight={600} component="label" htmlFor='email' mb="5px" mt="25px">
                             Email
                         </Typography>
-                        <CustomTextField id="email" type="email" name="email" variant="outlined" fullWidth/>
+                        <CustomTextField required id="email" type="email" name="email" variant="outlined" fullWidth/>
 
                         <Typography variant="subtitle1"
                                     fontWeight={600} component="label" htmlFor='password' mb="5px"
                                     mt="25px">Password</Typography>
-                        <CustomTextField id="password" type="password" name="password" variant="outlined" fullWidth/>
+                        <CustomTextField required name="password" variant="outlined" fullWidth
+                                         type={showPassword ? 'text' : 'password'}
+                                         InputProps={{
+                                             endAdornment:
+                                                 <InputAdornment position="end">
+                                                     <IconButton
+                                                         aria-label="toggle password visibility"
+                                                         onClick={handleClickShowPassword}
+                                                         onMouseDown={handleMouseDownPassword}
+                                                         edge="end"
+                                                     >
+                                                         {showPassword ? <VisibilityOff/> : <Visibility/>}
+                                                     </IconButton>
+                                                 </InputAdornment>,
+                                         }}
+                        />
                     </Stack>
                     <Button
                         color="primary"

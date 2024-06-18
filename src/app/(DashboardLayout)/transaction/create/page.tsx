@@ -162,7 +162,7 @@ const CreateTransactionPage = () => {
                                 >
                                     Total Transfer Record
                                 </Typography>
-                                <CustomTextField id="records" type="number" name="records" variant="outlined"
+                                <CustomTextField required id="records" type="number" name="records" variant="outlined"
                                                  fullWidth/>
                             </Box>
 
@@ -176,7 +176,7 @@ const CreateTransactionPage = () => {
                                 >
                                     Total Transfer Amount
                                 </Typography>
-                                <CustomTextField id="amounts" type="number" name="amounts" variant="outlined"
+                                <CustomTextField required id="amounts" type="number" name="amounts" variant="outlined"
                                                  fullWidth/>
                             </Box>
                         </Box>

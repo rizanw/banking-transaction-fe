@@ -1,6 +1,7 @@
 import {Box, Card, CardContent, Typography} from "@mui/material";
-import React from "react";
+import React, {useEffect, useState} from "react";
 import {Stack} from "@mui/system";
+import {fetchData} from "@/utils/api/apiService";
 
 
 type cardProps = {
@@ -24,7 +25,31 @@ const CardItem = ({title, num, color}: cardProps) => (
     </React.Fragment>
 )
 
+interface transactionStats {
+    awaiting_approval: number;
+    approved: number;
+    rejected: number
+}
+
 const TransactionOverview = () => {
+    const [stats, setStats] = useState<transactionStats | null>(null);
+
+    const loadData = async () => {
+        try {
+            fetchData(`/transactions/stats`, true).then(
+                response => {
+                    setStats(response)
+                }
+            )
+        } catch (error) {
+            console.error('Fetch error:', error);
+        }
+    };
+
+    useEffect(() => {
+        loadData();
+    }, []);
+
     return (
         <Card variant="outlined">
             <CardContent>
@@ -33,13 +58,13 @@ const TransactionOverview = () => {
                 </Typography>
                 <Stack direction="row" spacing={2} justifyContent="center" alignItems="center">
                     <Card variant="outlined">
-                        <CardItem title={"Awaiting Approval"} num={0} color="primary"></CardItem>
+                        <CardItem title={"Awaiting Approval"} num={stats?.awaiting_approval} color="primary"></CardItem>
                     </Card>
                     <Card variant="outlined">
-                        <CardItem title={"Successfully"} num={0} color="info"></CardItem>
+                        <CardItem title={"Successfully"} num={stats?.approved} color="info"></CardItem>
                     </Card>
                     <Card variant="outlined">
-                        <CardItem title={"Rejected"} num={0} color="error"></CardItem>
+                        <CardItem title={"Rejected"} num={stats?.rejected} color="error"></CardItem>
                     </Card>
                 </Stack>
             </CardContent>
