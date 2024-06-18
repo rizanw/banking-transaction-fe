@@ -10,7 +10,6 @@ import Select from "@mui/material/Select";
 import {fetchData} from "@/utils/api/apiService";
 import SearchOutlinedIcon from '@mui/icons-material/SearchOutlined';
 import RestartAltOutlinedIcon from '@mui/icons-material/RestartAltOutlined';
-import {end} from "@popperjs/core";
 
 interface corporation {
     id: number;

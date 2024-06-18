@@ -30,6 +30,7 @@ const Register = () => {
         const email = formData.get('email')
         const role = formData.get('role')
         const corpnum = formData.get('corp-num')
+        const code = formData.get('code')
         let phone = String(phoneField).split(" ")[0].replace(/\D/g, "") + "." + String(phoneField).split(" ").slice(1).join("")
 
         try {
@@ -40,6 +41,7 @@ const Register = () => {
                 phone: phone,
                 role: Number(role),
                 corporate_account_number: corpnum,
+                code: code,
             },).then(
                 response => {
                     setError(false);
