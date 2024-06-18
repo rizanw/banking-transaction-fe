@@ -4,8 +4,7 @@ import CustomTextField from '../../forms/CustomTextField';
 import {Stack} from '@mui/system';
 import {MuiTelInput} from "mui-tel-input";
 import Select, {SelectChangeEvent} from '@mui/material/Select';
-import CheckIcon from "@mui/icons-material/Check";
-import {isError} from "node:util";
+import {fetchData} from "@/utils/api/apiService";
 
 interface registerType {
     title?: string;
@@ -15,10 +14,16 @@ interface registerType {
     message?: string;
 }
 
+interface corporation {
+    id: number;
+    account_num: string;
+    name: string;
+}
+
 const AuthRegister = ({title, subtitle, subtext, isError, message}: registerType) => {
     const [phoneField, setPhoneField] = useState("");
     const [roleField, setRoleField] = useState("");
-    const [corpData, setCorpData] = useState([])
+    const [corpData, setCorpData] = useState<corporation[]>([])
     const [corpField, setCorpField] = useState("");
 
     const handlePhoneChange = (value: any) => {
@@ -34,20 +39,15 @@ const AuthRegister = ({title, subtitle, subtext, isError, message}: registerType
     }
 
     useEffect(() => {
-        fetch(`${process.env.NEXT_PUBLIC_API_URL}/corporates`)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
+        try {
+            fetchData(`/corporates`).then(
+                response => {
+                    setCorpData(response);
                 }
-                return response.json();
-            })
-            .then(data => {
-                setCorpData(data);
-                console.log(data);
-            })
-            .catch(error => {
-                console.error('Error fetching data:', error);
-            });
+            )
+        } catch (error) {
+            console.error('Fetch error:', error);
+        }
     }, []);
 
     return (
@@ -60,13 +60,13 @@ const AuthRegister = ({title, subtitle, subtext, isError, message}: registerType
 
             {subtext}
 
-                {
-                    message ? (
-                        <Alert variant="outlined" severity={isError ? "error" : "success"}>
-                            {message}
-                        </Alert>
-                    ) : null
-                }
+            {
+                message ? (
+                    <Alert variant="outlined" severity={isError ? "error" : "success"}>
+                        {message}
+                    </Alert>
+                ) : null
+            }
 
                 <Box>
                     <Stack mb={3}>
@@ -75,8 +75,8 @@ const AuthRegister = ({title, subtitle, subtext, isError, message}: registerType
                             Corporate Account No.
                         </Typography>
                         <Select id="corp-num" name="corp-num" onChange={handleCorpChange} value={corpField}>
-                            {corpData.map(item => (
-                                    <MenuItem value={item.account_num}>
+                            {corpData.map((item: corporation) => (
+                                    <MenuItem key={item.id} value={item.account_num}>
                                         {item.account_num} ({item.name})
                                     </MenuItem>
                                 )

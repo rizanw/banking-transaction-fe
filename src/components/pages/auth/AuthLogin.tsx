@@ -3,7 +3,7 @@ import {
     Box,
     Typography,
     Button,
-    Stack
+    Stack, Alert
 } from "@mui/material";
 import CustomTextField from "../../forms/CustomTextField";
 
@@ -11,9 +11,10 @@ interface loginType {
     title?: string;
     subtitle?: JSX.Element | JSX.Element[];
     subtext?: JSX.Element | JSX.Element[];
+    errorMessage?: string;
 }
 
-const AuthLogin = ({title, subtitle, subtext}: loginType) => (
+const AuthLogin = ({title, subtitle, subtext, errorMessage}: loginType) => (
     <>
         {title ? (
             <Typography fontWeight="700" variant="h2" mb={1}>
@@ -22,6 +23,14 @@ const AuthLogin = ({title, subtitle, subtext}: loginType) => (
         ) : null}
 
         {subtext}
+
+        {
+            errorMessage ? (
+                <Alert variant="outlined" severity={"error"}>
+                    {errorMessage}
+                </Alert>
+            ) : null
+        }
 
         <Stack>
             <Box>

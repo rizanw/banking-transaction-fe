@@ -21,21 +21,22 @@ const Login = () => {
 
     async function handleSubmit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault()
-
         const formData = new FormData(event.currentTarget)
         const username = formData.get('username')
         const password = formData.get('password')
 
-        const result = signIn("credentials", {
-            redirect: false,
-            username,
-            password
-        })
-        if (result?.error) {
-            console.log(result)
-            setError(result.error);
-        } else {
-            router.push("/");
+        try {
+            const result = await signIn("credentials", {
+                redirect: false,
+                username,
+                password
+            })
+            console.log("login:", result)
+            if (result?.error) {
+                setError(result?.error);
+            }
+        } catch (error) {
+            setError(String(error));
         }
     }
 
@@ -82,6 +83,7 @@ const Login = () => {
                         >
                             <form onSubmit={handleSubmit}>
                                 <AuthLogin
+                                    errorMessage={error}
                                     subtext={
                                         <Typography
                                             variant="subtitle1"

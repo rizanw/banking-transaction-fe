@@ -1,6 +1,7 @@
 import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import axios from 'axios';
+import {postData} from "@/utils/api/apiService";
+import {throws} from "node:assert";
 
 export const authOptions = {
     providers: [
@@ -8,46 +9,51 @@ export const authOptions = {
             name: "Credentials",
             credentials: {
                 username: {label: "Username", type: "text"},
-                password: {label: "Password", type: "password"}
+                password: {label: "Password", type: "password"},
             },
             authorize: async (credentials) => {
                 try {
-                    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/login`, {
-                        method: "POST",
-                        headers: {"Content-Type": "application/json"},
-                        body: JSON.stringify({
-                            username: credentials?.username,
-                            password: credentials?.password
-                        })
+                    const res = await postData(`${process.env.NEXT_PUBLIC_API_URL}/login`, {
+                        username: credentials?.username,
+                        password: credentials?.password
                     });
 
-                    const data = await res.json();
-                    if (res.ok && data.access_token) {
+                    if (res.accessToken != "") {
                         return {
-                            id: data.user_info.user_id,
-                            name: data.user_info.username,
-                            email: data.user_info.email,
-                            role: data.user_info.role,
-                            accessToken: data.access_token,
-                            corporateInfo: data.corporate_info
+                            id: res.user_info.user_id,
+                            name: res.user_info.username,
+                            email: res.user_info.email,
+                            role: res.user_info.role,
+                            accessToken: res.access_token,
+                            corporateInfo: res.corporate_info
                         };
                     } else {
-                        return null;
+                        return {error: res.data.message};
                     }
                 } catch (error) {
                     console.error("Error during authentication", error);
-                    return null;
+                    return {error: error.response.data.message};
                 }
             }
         })
     ],
     pages: {
-        signIn: "/login"
+        signIn: "/login",
+        signOut: "/logout"
     },
     session: {
         jwt: true
     },
     callbacks: {
+        async signIn({user}) {
+            if (user?.error) {
+                throw new Error(user?.error)
+            }
+            return true
+        },
+        async signOut() {
+            await postData(`${process.env.NEXT_PUBLIC_API_URL}/logout`, {}, true);
+        },
         async jwt({token, user}) {
             if (user) {
                 token.accessToken = user.accessToken;

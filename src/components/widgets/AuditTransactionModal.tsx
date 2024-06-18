@@ -14,10 +14,6 @@ const AuditTransactionModal = ({open, onClose, onSubmit, action, ref_num}: Audit
         <Dialog
             open={open}
             onClose={onClose}
-            PaperProps={{
-                component: 'form',
-                onSubmit: onSubmit,
-            }}
         >
             <DialogTitle>Audit Confirmation</DialogTitle>
             <DialogContent>
@@ -27,7 +23,7 @@ const AuditTransactionModal = ({open, onClose, onSubmit, action, ref_num}: Audit
             </DialogContent>
             <DialogActions>
                 <Button onClick={onClose}>Cancel</Button>
-                <Button type="submit">Confirm</Button>
+                <Button onClick={onSubmit}>Confirm</Button>
             </DialogActions>
         </Dialog>
     )

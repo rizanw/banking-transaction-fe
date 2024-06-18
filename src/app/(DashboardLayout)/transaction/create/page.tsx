@@ -1,18 +1,17 @@
 "use client";
 import PageContainer from "@/components/containers/PageContainer";
 import ProtectedRoute from "@/components/containers/ProtectedRoute";
-import {Alert, Box, Button, FormControlLabel, Grid, Radio, RadioGroup, Typography} from "@mui/material";
+import {Alert, Box, Button, FormControlLabel, Radio, RadioGroup, Typography} from "@mui/material";
 import FileUpload from "react-mui-fileuploader"
 import React, {ChangeEvent, FormEvent, useState} from "react";
 import CustomTextField from "@/components/forms/CustomTextField";
 import {Stack} from "@mui/system";
 import DownloadOutlinedIcon from '@mui/icons-material/DownloadOutlined';
-import {useSession} from "next-auth/react";
 import {DateTimePicker} from "@mui/x-date-pickers";
 import moment from "moment";
+import {fetchData, postData} from "@/utils/api/apiService";
 
 const CreateTransactionPage = () => {
-    const {data: session, status} = useSession();
     const [instructionField, setInstructionField] = useState("");
     const [datetimeField, setDatetimeField] = useState<moment.Moment | null>(moment());
     const [file, setFile] = useState<File | null>(null);
@@ -41,27 +40,19 @@ const CreateTransactionPage = () => {
         formData.append("total_amount", String(amounts));
         formData.append('file', file!);
         try {
-            const token = session?.accessToken;
-            fetch(`${process.env.NEXT_PUBLIC_API_URL}/transaction/upload`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                },
-                body: formData,
-            })
+            postData("/transaction/upload", formData, true, {})
                 .then(response => {
                     console.log(response);
-                    return response.json();
-                })
-                .then(data => {
-                    console.log(data);
-                    setAlertMsg(data.message)
+                    setIsError(false);
+                    setAlertMsg(response.message)
                     event.target.reset();
                 })
                 .catch(error => {
-                    setAlertMsg(error.message);
-                    setIsError(true);
                     console.error('Fetch error:', error);
+                    if (error.response.data) {
+                        setAlertMsg(String(error.response.data.message));
+                        setIsError(true);
+                    }
                 });
         } catch (error) {
             setAlertMsg(String(error));
@@ -72,23 +63,10 @@ const CreateTransactionPage = () => {
 
     const onDownloadTemplate = async () => {
         try {
-            const token = session?.accessToken;
-            fetch(`${process.env.NEXT_PUBLIC_API_URL}/transaction/download-template`, {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            })
+            fetchData("/transaction/download-template", true, {responseType: "blob"})
                 .then(response => {
-                    console.log(response);
-                    return response.blob();
-                })
-                .then(data => {
-                    let file = window.URL.createObjectURL(data);
+                    let file = window.URL.createObjectURL(response);
                     window.location.assign(file);
-                })
-                .catch(error => {
-                    console.error('Fetch error:', error);
                 });
         } catch (error) {
             console.error('Error download template:', error);

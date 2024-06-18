@@ -16,6 +16,7 @@ import CheckCircleOutlinedIcon from '@mui/icons-material/CheckCircleOutlined';
 import CancelOutlinedIcon from '@mui/icons-material/CancelOutlined';
 import TransactionDetailModal from "@/components/widgets/TransactionDetailModal";
 import AuditTransactionModal from "@/components/widgets/AuditTransactionModal";
+import {fetchData, postData} from "@/utils/api/apiService";
 
 interface TransactionData {
     id: number;
@@ -57,54 +58,33 @@ const TransactionTable: React.FC = () => {
     const loadData = async (page: number, perPage: number) => {
         setLoading(true);
         try {
-            const token = session?.accessToken;
-            fetch(`${process.env.NEXT_PUBLIC_API_URL}/transactions?page=${page}&per_page=${perPage}`, {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${token}`
+            fetchData(`/transactions?page=${page}&per_page=${perPage}`, true).then(
+                response => {
+                    setTransactionData(response.data)
+                    setTotal(response.total);
                 }
-            })
-                .then(response => {
-                    console.log(response);
-                    return response.json();
-                })
-                .then(data => {
-                    setTransactionData(data.data);
-                    setTotal(data.total);
-                })
-                .catch(error => {
-                    console.error('Fetch error:', error);
-                });
+            )
         } catch (error) {
-            console.error('Error fetching transactions:', error);
+            console.error('Fetch error:', error);
         } finally {
-            setLoading(false);
+            setLoading(false)
         }
     };
 
     const auditTransaction = async (trxID: number, action: string) => {
+        setLoading(true);
         try {
-            setAlertMsg("")
-            const token = session?.accessToken;
-            fetch(`${process.env.NEXT_PUBLIC_API_URL}/transaction/${trxID}/audit?action=${action}`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                },
-            })
-                .then(response => {
-                    console.log(response);
-                    return response.json();
-                })
-                .then(data => {
-                    console.log(data);
-                    setAlertMsg(data.message)
-                })
-                .catch(error => {
-                    console.error('Fetch error:', error);
-                });
+            postData(`/transaction/${trxID}/audit?action=${action}`, {}, true).then(
+                response => {
+                    setAlertMsg(trxRefNum + ": " + response.message)
+                    handleCloseAuditModal()
+                    loadData(pageNum + 1, rowsPerPage)
+                }
+            )
         } catch (error) {
-            console.error('Error download template:', error);
+            console.error('Post error:', error);
+        } finally {
+            setLoading(false)
         }
     }
 

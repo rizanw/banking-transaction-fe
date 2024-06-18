@@ -11,8 +11,8 @@ import {
     TableHead, TablePagination,
     TableRow
 } from "@mui/material";
-import {useSession} from "next-auth/react";
 import LoadingPage from "@/components/pages/LoadingPage";
+import {fetchData} from "@/utils/api/apiService";
 
 interface TransactionDetailDataData {
     id: number;
@@ -46,38 +46,23 @@ interface TransactionDetailModalProps {
 }
 
 const TransactionDetailModal = ({transactionID, open, onClose}: TransactionDetailModalProps) => {
-    const {data: session, status} = useSession();
     const [loading, setLoading] = useState(true);
     const [transactionData, setTransactionData] = useState<TransactionDetailData>();
     const [pageNum, setPageNum] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
-    const [total, setTotal] = useState(0);
 
     const loadData = async (transactionID: number, page: number, perPage: number) => {
         setLoading(true);
         try {
-            const token = session?.accessToken;
-            fetch(`${process.env.NEXT_PUBLIC_API_URL}/transaction/${transactionID}?page=${page}&per_page=${perPage}`, {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${token}`
+            fetchData(`/transaction/${transactionID}?page=${page}&per_page=${perPage}`, true).then(
+                response => {
+                    setTransactionData(response)
                 }
-            })
-                .then(response => {
-                    console.log(response);
-                    return response.json();
-                })
-                .then(data => {
-                    setTransactionData(data);
-                    setTotal(data.total);
-                })
-                .catch(error => {
-                    console.error('Fetch error:', error);
-                });
+            )
         } catch (error) {
-            console.error('Error fetching transactions:', error);
+            console.error('Fetch error:', error);
         } finally {
-            setLoading(false);
+            setLoading(false)
         }
     };
 
@@ -85,7 +70,6 @@ const TransactionDetailModal = ({transactionID, open, onClose}: TransactionDetai
         loadData(transactionID, pageNum + 1, rowsPerPage);
     }, [transactionID, pageNum, rowsPerPage]);
 
-    // TODO: add table
     const handleChangePage = (event: unknown, newPage: number) => {
         setPageNum(newPage);
     };
@@ -178,7 +162,7 @@ const TransactionDetailModal = ({transactionID, open, onClose}: TransactionDetai
                 </TableContainer>
                 <TablePagination
                     component="div"
-                    count={total}
+                    count={transactionData ? transactionData?.total : 0}
                     page={pageNum}
                     onPageChange={handleChangePage}
                     rowsPerPage={rowsPerPage}

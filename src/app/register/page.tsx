@@ -7,6 +7,7 @@ import {useRouter} from "next/navigation";
 import {FormEvent, useEffect, useState} from "react";
 import {useSession} from "next-auth/react";
 import LoadingPage from "@/components/pages/LoadingPage";
+import {postData} from "@/utils/api/apiService";
 
 const Register = () => {
     const router = useRouter();
@@ -22,7 +23,6 @@ const Register = () => {
 
     async function handleSubmit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault()
-
         const formData = new FormData(event.currentTarget)
         const username = formData.get('username')
         const password = formData.get('password')
@@ -32,30 +32,27 @@ const Register = () => {
         const corpnum = formData.get('corp-num')
         let phone = String(phoneField).split(" ")[0].replace(/\D/g, "") + "." + String(phoneField).split(" ").slice(1).join("")
 
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/register`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({
+        try {
+            postData(`/register`, {
                 username: username,
                 password: password,
                 email: email,
                 phone: phone,
                 role: Number(role),
                 corporate_account_number: corpnum,
-            }),
-        })
-
-        if (response.ok) {
-            setError(false);
-            setAlertMsg("User registered successfully!");
-        } else {
-            setError(true);
-            let msg = await response.text()
-            if (msg == "") {
-                let data = await response.json();
-                msg = data.message;
-            }
-            setAlertMsg(msg)
+            },).then(
+                response => {
+                    setError(false);
+                    setAlertMsg("User registered successfully! Please Login.");
+                }
+            ).catch((error) => {
+                if (error.response) {
+                    setError(true);
+                    setAlertMsg(String(error.response.data))
+                }
+            })
+        } catch (error) {
+            console.error('Post error:', error);
         }
     }
 

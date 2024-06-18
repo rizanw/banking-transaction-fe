@@ -1,8 +1,8 @@
 import React from 'react';
 import {Box, AppBar, Toolbar, styled, Stack, IconButton, Badge, Button} from '@mui/material';
 import PropTypes from 'prop-types';
-import Link from 'next/link';
 import MenuIcon from '@mui/icons-material/Menu';
+import { signOut } from 'next-auth/react';
 
 interface ItemType {
     toggleMobileSidebar: (event: React.MouseEvent<HTMLElement>) => void;
@@ -42,9 +42,13 @@ const Header = ({toggleMobileSidebar}: ItemType) => {
 
                 <Box flexGrow={1}/>
                 <Stack spacing={1} direction="row" alignItems="center">
-                    <Button variant="contained" component={Link} href="/authentication/login" disableElevation
-                            color="primary">
-                        Login
+                    <Button onClick={async () => {
+                        const data = await signOut({ redirect: false });
+                        if (data?.error) {
+                            window.location.href = '/';
+                        }
+                    }} variant="contained" disableElevation color="primary">
+                        Logout
                     </Button>
                 </Stack>
             </ToolbarStyled>
