@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useState} from 'react';
 import {
     Table,
     TableBody,
@@ -8,7 +8,7 @@ import {
     TableRow,
     Paper,
     TablePagination,
-    Button, Alert,
+    Button, Alert, Chip,
 } from '@mui/material';
 import {useSession} from "next-auth/react";
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
@@ -17,9 +17,12 @@ import CancelOutlinedIcon from '@mui/icons-material/CancelOutlined';
 import TransactionDetailModal from "@/components/widgets/TransactionDetailModal";
 import AuditTransactionModal from "@/components/widgets/AuditTransactionModal";
 import {postData} from "@/utils/api/apiService";
+import {errorMessage} from "@/utils/api/errors";
+import {formatAmount} from "@/utils/format";
+import {ROLE_APPROVER, STATUS_AWAITING_APPROVAL} from "@/utils/roles";
 
 export interface TransactionData {
-    id: number;
+    id: string;
     ref_num: string;
     total_transfer_amount: number;
     total_transfer_record: number;
@@ -35,62 +38,76 @@ type TransactionTableProps = {
     page: number;
     perPage: number;
     onPageChange: (event: React.MouseEvent<HTMLButtonElement> | null, page: number) => void
+    onAudited?: () => void; // called after a successful approve/reject, to reload the data
     loading?: boolean;
 }
 
-const TransactionTable = ({data, totalData, page, perPage, onPageChange, loading}: TransactionTableProps) => {
-    const {data: session, status} = useSession();
-    const role = session?.user?.role as number
+const statusColor = (status: string) =>
+    status === "Approved" ? "success" : status === "Rejected" ? "error" : "warning";
+
+const TransactionTable = ({data, totalData, page, perPage, onPageChange, onAudited, loading}: TransactionTableProps) => {
+    const {data: session} = useSession();
+    const isApprover = session?.user?.role === ROLE_APPROVER;
+
+    const [transactionID, setTransactionID] = useState<string>("");
     const [openDetailModal, setOpenDetailModal] = useState<boolean>(false)
-    const handleOpenDetailModal = (id: React.SetStateAction<number>) => {
+    const [alert, setAlert] = useState<{ message: string, isError: boolean } | null>(null);
+    const [auditAction, setAuditAction] = useState<string>("");
+    const [trxRefNum, setTrxRefNum] = useState("");
+    const [openAuditModal, setOpenAuditModal] = useState(false);
+    const [submitting, setSubmitting] = useState(false);
+
+    const handleOpenDetailModal = (id: string) => {
         setTransactionID(id)
         setOpenDetailModal(true)
     };
     const handleCloseDetailModal = () => setOpenDetailModal(false);
-    const [transactionID, setTransactionID] = useState<number>(0);
-    const [alertMsg, setAlertMsg] = useState<string>("");
-    const [auditAction, setAuditAction] = useState<string>("");
-    const [trxRefNum, setTrxRefNum] = useState("");
-    const [openAuditModal, setOpenAuditModal] = useState(false);
+
+    const openAudit = (row: TransactionData, action: string) => {
+        setAuditAction(action)
+        setTransactionID(row.id)
+        setTrxRefNum(row.ref_num)
+        setOpenAuditModal(true)
+    }
+
     const handleCloseAuditModal = () => {
         setOpenAuditModal(false)
         setAuditAction("")
         setTrxRefNum("")
-        setTransactionID(0)
     };
 
-    const auditTransaction = async (trxID: number, action: string) => {
+    const auditTransaction = async () => {
+        setSubmitting(true);
         try {
-            postData(`/transaction/${trxID}/audit?action=${action}`, {}, true).then(
-                response => {
-                    setAlertMsg(trxRefNum + ": " + response.message)
-                    handleCloseAuditModal()
-                }
-            )
+            const response = await postData(`/transaction/${transactionID}/audit?action=${auditAction}`, {}, true);
+            setAlert({message: `${trxRefNum}: ${response.message}`, isError: false});
+            onAudited?.();
         } catch (error) {
-            console.error('Post error:', error);
+            setAlert({message: `${trxRefNum}: ${errorMessage(error)}`, isError: true});
+        } finally {
+            setSubmitting(false);
+            handleCloseAuditModal();
         }
     }
 
     return (
         <Paper>
-            {
-                alertMsg ? (
-                    <Alert variant="outlined" severity={"info"}>
-                        {alertMsg}
-                    </Alert>
-                ) : null
-            }
+            {alert ? (
+                <Alert variant="outlined" severity={alert.isError ? "error" : "success"} onClose={() => setAlert(null)}>
+                    {alert.message}
+                </Alert>
+            ) : null}
             <TableContainer>
                 <Table>
                     <TableHead>
                         <TableRow>
                             <TableCell>Reference No.</TableCell>
-                            <TableCell>Total Transfer Amount</TableCell>
-                            <TableCell>Total Transfer Record</TableCell>
-                            <TableCell>From Account No</TableCell>
+                            <TableCell align="right">Total Amount</TableCell>
+                            <TableCell align="right">Records</TableCell>
+                            <TableCell>From Account No.</TableCell>
                             <TableCell>Maker</TableCell>
                             <TableCell>Transfer Date</TableCell>
+                            <TableCell>Status</TableCell>
                             <TableCell>Operation</TableCell>
                         </TableRow>
                     </TableHead>
@@ -101,43 +118,34 @@ const TransactionTable = ({data, totalData, page, perPage, onPageChange, loading
                                     Loading...
                                 </TableCell>
                             </TableRow>
-                        ) : data ? (data.map((row) => (
+                        ) : data && data.length > 0 ? (data.map((row) => (
                             <TableRow key={row.id}>
-                                <TableCell>{row.ref_num}</TableCell>
-                                <TableCell>{row.total_transfer_amount}</TableCell>
-                                <TableCell>{row.total_transfer_record}</TableCell>
+                                <TableCell sx={{fontFamily: "monospace", fontSize: 12}} title={row.ref_num}>
+                                    {row.ref_num.slice(0, 10)}…
+                                </TableCell>
+                                <TableCell align="right">{formatAmount(row.total_transfer_amount)}</TableCell>
+                                <TableCell align="right">{row.total_transfer_record}</TableCell>
                                 <TableCell>{row.from_account_no}</TableCell>
                                 <TableCell>{row.maker}</TableCell>
-                                <TableCell>{row.transfer_date}</TableCell>
+                                <TableCell sx={{whiteSpace: "nowrap"}}>{row.transfer_date}</TableCell>
                                 <TableCell>
-                                    {
-                                        role == 2 ? (
-                                            <>
-                                                <Button variant="text" startIcon={<CheckCircleOutlinedIcon/>}
-                                                        onClick={() => {
-                                                            setOpenAuditModal(true)
-                                                            setAuditAction("approve")
-                                                            setTransactionID(row.id)
-                                                            setTrxRefNum(row.ref_num)
-                                                        }}
-                                                        color="success"
-                                                        size="small">
-                                                    Approve
-                                                </Button>
-                                                <Button variant="text" startIcon={<CancelOutlinedIcon/>}
-                                                        onClick={() => {
-                                                            setOpenAuditModal(true)
-                                                            setAuditAction("reject")
-                                                            setTransactionID(row.id)
-                                                            setTrxRefNum(row.ref_num)
-                                                        }}
-                                                        color="error"
-                                                        size="small">
-                                                    Reject
-                                                </Button>
-                                            </>
-                                        ) : (null)
-                                    }
+                                    <Chip label={row.status} color={statusColor(row.status)} size="small" variant="outlined"/>
+                                </TableCell>
+                                <TableCell sx={{whiteSpace: "nowrap"}}>
+                                    {isApprover && row.status === STATUS_AWAITING_APPROVAL ? (
+                                        <>
+                                            <Button variant="text" startIcon={<CheckCircleOutlinedIcon/>}
+                                                    onClick={() => openAudit(row, "approve")}
+                                                    color="success" size="small">
+                                                Approve
+                                            </Button>
+                                            <Button variant="text" startIcon={<CancelOutlinedIcon/>}
+                                                    onClick={() => openAudit(row, "reject")}
+                                                    color="error" size="small">
+                                                Reject
+                                            </Button>
+                                        </>
+                                    ) : null}
                                     <Button
                                         onClick={() => handleOpenDetailModal(row.id)}
                                         startIcon={<VisibilityOutlinedIcon/>}
@@ -165,12 +173,12 @@ const TransactionTable = ({data, totalData, page, perPage, onPageChange, loading
                 rowsPerPage={perPage}
                 rowsPerPageOptions={[perPage]}
             />
-            {
-                transactionID ? (<TransactionDetailModal transactionID={transactionID} open={openDetailModal}
-                                                         onClose={handleCloseDetailModal}/>) : null
-            }
+            {openDetailModal && transactionID ? (
+                <TransactionDetailModal transactionID={transactionID} open={openDetailModal}
+                                        onClose={handleCloseDetailModal}/>
+            ) : null}
             <AuditTransactionModal open={openAuditModal} onClose={handleCloseAuditModal}
-                                   onSubmit={async () => auditTransaction(transactionID, auditAction)}
+                                   onSubmit={auditTransaction} submitting={submitting}
                                    action={auditAction} ref_num={trxRefNum}/>
         </Paper>
     );

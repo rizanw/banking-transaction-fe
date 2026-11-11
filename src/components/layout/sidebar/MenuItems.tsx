@@ -2,8 +2,19 @@ import HomeIcon from '@mui/icons-material/Home';
 import NoteAddIcon from '@mui/icons-material/NoteAdd';
 import LibraryBooksIcon from '@mui/icons-material/LibraryBooks';
 import {uniqueId} from "lodash";
+import {ROLE_MAKER} from "@/utils/roles";
 
-const Menuitems = [
+interface MenuItem {
+    navlabel?: boolean;
+    subheader?: string;
+    id?: string;
+    title?: string;
+    icon?: any;
+    href?: string;
+    roles?: string[]; // only shown to these roles; all roles when unset
+}
+
+const Menuitems: MenuItem[] = [
     {
         navlabel: true,
         subheader: "Home",
@@ -24,6 +35,7 @@ const Menuitems = [
         title: "Create Transaction",
         icon: NoteAddIcon,
         href: "/transaction/create",
+        roles: [ROLE_MAKER],
     },
     {
         id: uniqueId(),

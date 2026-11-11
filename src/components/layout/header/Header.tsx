@@ -1,14 +1,15 @@
 import React from 'react';
-import {Box, AppBar, Toolbar, styled, Stack, IconButton, Badge, Button} from '@mui/material';
+import {Box, AppBar, Toolbar, styled, Stack, IconButton, Button, Typography} from '@mui/material';
 import PropTypes from 'prop-types';
 import MenuIcon from '@mui/icons-material/Menu';
-import { signOut } from 'next-auth/react';
+import {signOut, useSession} from 'next-auth/react';
 
 interface ItemType {
     toggleMobileSidebar: (event: React.MouseEvent<HTMLElement>) => void;
 }
 
 const Header = ({toggleMobileSidebar}: ItemType) => {
+    const {data: session} = useSession();
     const AppBarStyled = styled(AppBar)(({theme}) => ({
         boxShadow: 'none',
         background: theme.palette.background.paper,
@@ -42,12 +43,13 @@ const Header = ({toggleMobileSidebar}: ItemType) => {
 
                 <Box flexGrow={1}/>
                 <Stack spacing={1} direction="row" alignItems="center">
-                    <Button onClick={async () => {
-                        const data = await signOut({ redirect: false });
-                        if (data?.error) {
-                            window.location.href = '/';
-                        }
-                    }} variant="contained" disableElevation color="primary">
+                    {session?.user ? (
+                        <Typography variant="body2" color="text.secondary" sx={{display: {xs: "none", sm: "block"}}}>
+                            {session.user.name} · {session.user.role} · {session.user.corporateInfo?.name}
+                        </Typography>
+                    ) : null}
+                    <Button onClick={() => signOut({callbackUrl: "/login"})}
+                            variant="contained" disableElevation color="primary">
                         Logout
                     </Button>
                 </Stack>
