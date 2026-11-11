@@ -2,44 +2,25 @@ import axiosInstance from './axiosInstance';
 import {getSession} from "next-auth/react";
 import {AxiosRequestConfig} from "axios";
 
-const getAuthToken = async () => {
+const withAuth = async (axiosConf: AxiosRequestConfig = {}): Promise<AxiosRequestConfig> => {
     const session = await getSession();
-    console.log(session);
-    if (session?.accessToken) {
-        return `Bearer ${session.accessToken}`;
-    } else {
+    if (!session?.accessToken) {
         throw new Error('Session not found or token missing.');
     }
+    return {
+        ...axiosConf,
+        headers: {...axiosConf.headers, Authorization: `Bearer ${session.accessToken}`},
+    };
 };
 
 export const fetchData = async (url: string, useToken?: boolean, axiosConf?: AxiosRequestConfig) => {
-    try {
-        if (useToken) {
-            const token = await getAuthToken();
-            axiosConf = axiosConf || {};
-            axiosConf.headers = axiosConf.headers || {};
-            axiosConf.headers.Authorization = token;
-        }
-        const response = await axiosInstance.get(url, axiosConf);
-        return response.data;
-    } catch (error) {
-        console.error('Failed to fetch data:', error);
-        throw error;
-    }
+    const conf = useToken ? await withAuth(axiosConf) : axiosConf;
+    const response = await axiosInstance.get(url, conf);
+    return response.data;
 };
 
-export const postData = async (url: string, data: any, useToken?: boolean, axiosConf?: AxiosRequestConfig) => {
-    try {
-        if (useToken) {
-            const token = await getAuthToken();
-            axiosConf = axiosConf || {};
-            axiosConf.headers = axiosConf.headers || {};
-            axiosConf.headers.Authorization = token;
-        }
-        const response = await axiosInstance.post(url, data, axiosConf);
-        return response.data;
-    } catch (error) {
-        console.error('Failed to post data:', error);
-        throw error;
-    }
+export const postData = async (url: string, data: unknown, useToken?: boolean, axiosConf?: AxiosRequestConfig) => {
+    const conf = useToken ? await withAuth(axiosConf) : axiosConf;
+    const response = await axiosInstance.post(url, data, conf);
+    return response.data;
 };

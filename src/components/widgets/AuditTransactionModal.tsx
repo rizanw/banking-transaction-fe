@@ -5,11 +5,12 @@ interface AuditTransactionModalProps {
     open: boolean;
     onClose: () => void;
     onSubmit: () => void;
+    submitting?: boolean;
     action: string;
     ref_num: string;
 }
 
-const AuditTransactionModal = ({open, onClose, onSubmit, action, ref_num}: AuditTransactionModalProps) => {
+const AuditTransactionModal = ({open, onClose, onSubmit, submitting, action, ref_num}: AuditTransactionModalProps) => {
     return (
         <Dialog
             open={open}
@@ -22,8 +23,11 @@ const AuditTransactionModal = ({open, onClose, onSubmit, action, ref_num}: Audit
                 </DialogContentText>
             </DialogContent>
             <DialogActions>
-                <Button onClick={onClose}>Cancel</Button>
-                <Button onClick={onSubmit}>Confirm</Button>
+                <Button onClick={onClose} disabled={submitting}>Cancel</Button>
+                <Button onClick={onSubmit} disabled={submitting}
+                        color={action === "reject" ? "error" : "success"}>
+                    Confirm
+                </Button>
             </DialogActions>
         </Dialog>
     )

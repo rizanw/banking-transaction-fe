@@ -8,6 +8,7 @@ import {FormEvent, useEffect, useState} from "react";
 import {useSession} from "next-auth/react";
 import LoadingPage from "@/components/pages/LoadingPage";
 import {postData} from "@/utils/api/apiService";
+import {errorMessage} from "@/utils/api/errors";
 
 const Register = () => {
     const router = useRouter();
@@ -34,7 +35,7 @@ const Register = () => {
         let phone = String(phoneField).split(" ")[0].replace(/\D/g, "") + "." + String(phoneField).split(" ").slice(1).join("")
 
         try {
-            postData(`/register`, {
+            await postData(`/register`, {
                 username: username,
                 password: password,
                 email: email,
@@ -42,19 +43,13 @@ const Register = () => {
                 role: Number(role),
                 corporate_account_number: corpnum,
                 code: code,
-            },).then(
-                response => {
-                    setError(false);
-                    setAlertMsg("User registered successfully! Please Login.");
-                }
-            ).catch((error) => {
-                if (error.response) {
-                    setError(true);
-                    setAlertMsg(String(error.response.data))
-                }
-            })
+            });
+            setError(false);
+            setAlertMsg("Account registered! You can now log in.");
+            setTimeout(() => router.push("/login"), 1500);
         } catch (error) {
-            console.error('Post error:', error);
+            setError(true);
+            setAlertMsg(errorMessage(error));
         }
     }
 

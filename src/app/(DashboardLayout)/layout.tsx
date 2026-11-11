@@ -15,6 +15,7 @@ const MainWrapper = styled("div")(() => ({
 const PageWrapper = styled("div")(() => ({
     display: "flex",
     flexGrow: 1,
+    minWidth: 0, // let wide tables scroll instead of stretching the page
     paddingBottom: "60px",
     flexDirection: "column",
     zIndex: 1,

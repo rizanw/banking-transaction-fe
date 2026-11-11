@@ -1,10 +1,11 @@
-import React, {FormEvent, useEffect, useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {Box, Typography, Button, MenuItem, Alert, InputAdornment, IconButton} from '@mui/material';
 import CustomTextField from '../../forms/CustomTextField';
 import {Stack} from '@mui/system';
 import {MuiTelInput} from "mui-tel-input";
 import Select, {SelectChangeEvent} from '@mui/material/Select';
 import {fetchData, postData} from "@/utils/api/apiService";
+import {errorMessage} from "@/utils/api/errors";
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
 
@@ -29,25 +30,24 @@ const AuthRegister = ({title, subtitle, subtext, isError, message}: registerType
     const [corpData, setCorpData] = useState<corporation[]>([])
     const [corpField, setCorpField] = useState("");
     const [showPassword, setShowPassword] = React.useState(false);
-    const [isCodeSend, setIsCodeSend] = React.useState(false);
     const [count, setCount] = useState<number>(0);
+    const [sendingCode, setSendingCode] = useState(false);
+    const [otpMessage, setOtpMessage] = useState<{ text: string, isError: boolean } | null>(null);
 
-    const handleClickSendCode = async (event: FormEvent<HTMLFormElement>) => {
-        if (emailField == "") {
-            message = "please fill your email first!"
+    const handleClickSendCode = async () => {
+        if (emailField === "") {
+            setOtpMessage({text: "Please fill in your email first.", isError: true});
             return
         }
+        setSendingCode(true);
         try {
-            postData(`/send-otp`, {email: emailField}).then(
-                response => {
-                    console.log(response)
-                    message = response.message;
-                    setIsCodeSend(true);
-                    setCount(60)
-                }
-            )
+            const response = await postData(`/send-otp`, {email: emailField});
+            setOtpMessage({text: response.message, isError: false});
+            setCount(60);
         } catch (error) {
-            console.error('Fetch error:', error);
+            setOtpMessage({text: errorMessage(error, "Failed to send the code."), isError: true});
+        } finally {
+            setSendingCode(false);
         }
     }
 
@@ -69,22 +69,16 @@ const AuthRegister = ({title, subtitle, subtext, isError, message}: registerType
     }
 
     useEffect(() => {
-        try {
-            fetchData(`/corporates`).then(
-                response => {
-                    setCorpData(response);
-                }
-            )
-        } catch (error) {
-            console.error('Fetch error:', error);
-        }
+        fetchData(`/corporates`)
+            .then(setCorpData)
+            .catch(error => console.error('Fetch error:', error));
+    }, []);
 
-        if (count > 0) {
-            const timer = setInterval(() => {
-                setCount(prevCount => prevCount - 1);
-            }, 1000);
-            return () => clearInterval(timer);
-        }
+    // resend countdown
+    useEffect(() => {
+        if (count <= 0) return;
+        const timer = setTimeout(() => setCount(count - 1), 1000);
+        return () => clearTimeout(timer);
     }, [count]);
 
     return (
@@ -175,18 +169,19 @@ const AuthRegister = ({title, subtitle, subtext, isError, message}: registerType
                                 fontWeight={600} component="label" htmlFor='code' mb="5px"
                                 mt="25px">Verification Code</Typography>
                     <CustomTextField required name="code" variant="outlined" fullWidth type="text"
-                                     helperText={count ? "we send the code on your email. please try again in " + count : ""}
+                                     inputProps={{inputMode: "numeric", maxLength: 6}}
+                                     error={Boolean(otpMessage?.isError)}
+                                     helperText={otpMessage ? otpMessage.text + (count ? ` You can resend in ${count}s.` : "") : ""}
                                      InputProps={{
                                          endAdornment:
                                              <InputAdornment position="end">
                                                  <Button
-                                                     disabled={isCodeSend}
+                                                     disabled={sendingCode || count > 0}
                                                      color="primary"
                                                      variant="contained"
                                                      onClick={handleClickSendCode}
-                                                     edge="end"
                                                  >
-                                                     Send OTP
+                                                     {count > 0 ? "Sent" : "Send OTP"}
                                                  </Button>
                                              </InputAdornment>,
                                      }}

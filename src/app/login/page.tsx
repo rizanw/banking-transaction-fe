@@ -31,7 +31,6 @@ const Login = () => {
                 username,
                 password
             })
-            console.log("login:", result)
             if (result?.error) {
                 setError(result?.error);
             }

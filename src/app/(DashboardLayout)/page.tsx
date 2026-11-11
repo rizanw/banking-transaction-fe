@@ -5,53 +5,60 @@ import {Box, Grid} from "@mui/material";
 import TransactionOverview from "@/components/widgets/TransactionOverview";
 import TransactionTable, {TransactionData} from "@/components/widgets/TransactionTable";
 import {fetchData} from "@/utils/api/apiService";
-import React, {useEffect, useState} from "react";
+import React, {useCallback, useEffect, useState} from "react";
 import {useSession} from "next-auth/react";
+import {ROLE_APPROVER} from "@/utils/roles";
 
 export default function Home() {
-    const {data: session, status} = useSession();
+    const {data: session} = useSession();
     const [loading, setLoading] = useState(false);
     const [pageNum, setPageNum] = useState(0);
-    const [rowsPerPage, setRowsPerPage] = useState(5);
+    const rowsPerPage = 5;
     const [transactionData, setTransactionData] = useState<TransactionData[]>([]);
-    const [totalTrasnactionData, setTotalTrasnactionData] = useState<number>(0);
-    const filterStatus = session?.user!.role == 2 ? 1 : 0
+    const [totalTransactionData, setTotalTransactionData] = useState<number>(0);
+    const [refreshKey, setRefreshKey] = useState(0);
+
+    // approvers see what's waiting for them; makers see their latest transactions
+    const filterStatus = session?.user?.role === ROLE_APPROVER ? 1 : 0;
 
     const handleChangePage = (event: React.MouseEvent<HTMLButtonElement> | null, page: number) => {
         setPageNum(page);
     };
 
-    const loadData = async (page: number, perPage: number) => {
+    const loadData = useCallback(async () => {
         setLoading(true);
         try {
-            fetchData(`/transactions?page=${page}&per_page=${perPage}&status=${filterStatus}`, true).then(
-                response => {
-                    setTransactionData(response.data)
-                    setTotalTrasnactionData(response.total);
-                }
-            )
+            const response = await fetchData(`/transactions`, true, {
+                params: {page: pageNum + 1, per_page: rowsPerPage, status: filterStatus},
+            });
+            setTransactionData(response.data);
+            setTotalTransactionData(response.total);
         } catch (error) {
             console.error('Fetch error:', error);
         } finally {
-            setLoading(false)
+            setLoading(false);
         }
-    };
+    }, [pageNum, filterStatus]);
 
     useEffect(() => {
-        loadData(pageNum + 1, rowsPerPage)
-    }, [pageNum, rowsPerPage, filterStatus]);
+        if (session) loadData();
+    }, [session, loadData]);
 
     return (
         <ProtectedRoute>
-            <PageContainer title="Dashboard" description="this is Dashboard">
+            <PageContainer title="Dashboard" description="Transaction overview">
                 <Box>
                     <Grid container spacing={2}>
-                        <Grid item xs={12} lg={8}>
-                            <TransactionOverview/>
+                        <Grid item xs={12}>
+                            <TransactionOverview refreshKey={refreshKey}/>
                         </Grid>
-                        <Grid item xs={12} lg={8}>
-                            <TransactionTable data={transactionData} totalData={totalTrasnactionData} page={pageNum}
-                                              perPage={rowsPerPage} onPageChange={handleChangePage} loading={loading}/>
+                        <Grid item xs={12}>
+                            <TransactionTable data={transactionData} totalData={totalTransactionData} page={pageNum}
+                                              perPage={rowsPerPage} onPageChange={handleChangePage} loading={loading}
+                                              onAudited={() => {
+                                                  loadData();
+                                                  setRefreshKey(k => k + 1);
+                                              }}/>
                         </Grid>
                     </Grid>
                 </Box>

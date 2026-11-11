@@ -13,9 +13,10 @@ import {
 } from "@mui/material";
 import LoadingPage from "@/components/pages/LoadingPage";
 import {fetchData} from "@/utils/api/apiService";
+import {formatAmount} from "@/utils/format";
 
 interface TransactionDetailDataData {
-    id: number;
+    id: string;
     to_account_num: string;
     to_account_name: string;
     to_account_bank: string;
@@ -24,7 +25,7 @@ interface TransactionDetailDataData {
 }
 
 interface TransactionDetailData {
-    id: number;
+    id: string;
     ref_num: string;
     from_account_num: string,
     submit_datetime: string,
@@ -40,7 +41,7 @@ interface TransactionDetailData {
 }
 
 interface TransactionDetailModalProps {
-    transactionID: number;
+    transactionID: string;
     open: boolean;
     onClose: () => void;
 }
@@ -49,16 +50,13 @@ const TransactionDetailModal = ({transactionID, open, onClose}: TransactionDetai
     const [loading, setLoading] = useState(true);
     const [transactionData, setTransactionData] = useState<TransactionDetailData>();
     const [pageNum, setPageNum] = useState(0);
-    const [rowsPerPage, setRowsPerPage] = useState(10);
+    const rowsPerPage = 10;
 
-    const loadData = async (transactionID: number, page: number, perPage: number) => {
+    const loadData = async (transactionID: string, page: number, perPage: number) => {
         setLoading(true);
         try {
-            fetchData(`/transaction/${transactionID}?page=${page}&per_page=${perPage}`, true).then(
-                response => {
-                    setTransactionData(response)
-                }
-            )
+            const response = await fetchData(`/transaction/${transactionID}?page=${page}&per_page=${perPage}`, true);
+            setTransactionData(response);
         } catch (error) {
             console.error('Fetch error:', error);
         } finally {
@@ -66,9 +64,11 @@ const TransactionDetailModal = ({transactionID, open, onClose}: TransactionDetai
         }
     };
 
+    // the API returns every transfer row at once, so pagination happens here
     useEffect(() => {
-        loadData(transactionID, pageNum + 1, rowsPerPage);
-    }, [transactionID, pageNum, rowsPerPage]);
+        loadData(transactionID, 1, rowsPerPage);
+        setPageNum(0);
+    }, [transactionID, rowsPerPage]);
 
     const handleChangePage = (event: unknown, newPage: number) => {
         setPageNum(newPage);
@@ -124,7 +124,7 @@ const TransactionDetailModal = ({transactionID, open, onClose}: TransactionDetai
                     </Grid>
                     <Grid item xs={6}>
                         <DialogContentText>
-                            Total Transfer Amount: <b>{transactionData?.total_amount}</b>
+                            Total Transfer Amount: <b>{formatAmount(transactionData?.total_amount)}</b>
                         </DialogContentText>
                     </Grid>
                 </Grid>
@@ -141,13 +141,15 @@ const TransactionDetailModal = ({transactionID, open, onClose}: TransactionDetai
                             </TableRow>
                         </TableHead>
                         <TableBody>
-                            {transactionData?.data ? (transactionData?.data.map((transaction, idx) => (
+                            {transactionData?.data?.length ? (transactionData.data
+                                .slice(pageNum * rowsPerPage, (pageNum + 1) * rowsPerPage)
+                                .map((transaction, idx) => (
                                 <TableRow key={transaction.id}>
-                                    <TableCell>{idx + 1}</TableCell>
+                                    <TableCell>{pageNum * rowsPerPage + idx + 1}</TableCell>
                                     <TableCell>{transaction.to_account_num}</TableCell>
                                     <TableCell>{transaction.to_account_name}</TableCell>
                                     <TableCell>{transaction.to_account_bank}</TableCell>
-                                    <TableCell>{transaction.amount}</TableCell>
+                                    <TableCell align="right">{formatAmount(transaction.amount)}</TableCell>
                                     <TableCell>{transaction.status}</TableCell>
                                 </TableRow>
                             ))) : (

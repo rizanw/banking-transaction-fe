@@ -3,7 +3,6 @@ import React, {useEffect, useState} from "react";
 import {Stack} from "@mui/system";
 import {fetchData} from "@/utils/api/apiService";
 
-
 type cardProps = {
     title?: string;
     num?: number;
@@ -11,44 +10,33 @@ type cardProps = {
 };
 
 const CardItem = ({title, num, color}: cardProps) => (
-    <React.Fragment>
-        <Box sx={{minWidth: 200}}>
-            <CardContent>
-                <Typography sx={{fontSize: 14}} color="text.secondary" gutterBottom>
-                    {title}
-                </Typography>
-                <Typography variant="h5" component="div" color={color}>
-                    {num}
-                </Typography>
-            </CardContent>
-        </Box>
-    </React.Fragment>
+    <Box sx={{minWidth: 160}}>
+        <CardContent>
+            <Typography sx={{fontSize: 14}} color="text.secondary" gutterBottom>
+                {title}
+            </Typography>
+            <Typography variant="h5" component="div" color={color}>
+                {num ?? "-"}
+            </Typography>
+        </CardContent>
+    </Box>
 )
 
+// shape returned by GET /transactions/stats
 interface transactionStats {
-    awaiting_approval: number;
-    approved: number;
-    rejected: number
+    AwaitingApproval: number;
+    StatusApproved: number;
+    StatusRejected: number;
 }
 
-const TransactionOverview = () => {
+const TransactionOverview = ({refreshKey = 0}: { refreshKey?: number }) => {
     const [stats, setStats] = useState<transactionStats | null>(null);
 
-    const loadData = async () => {
-        try {
-            fetchData(`/transactions/stats`, true).then(
-                response => {
-                    setStats(response)
-                }
-            )
-        } catch (error) {
-            console.error('Fetch error:', error);
-        }
-    };
-
     useEffect(() => {
-        loadData();
-    }, []);
+        fetchData(`/transactions/stats`, true)
+            .then(setStats)
+            .catch(error => console.error('Fetch error:', error));
+    }, [refreshKey]);
 
     return (
         <Card variant="outlined">
@@ -56,15 +44,15 @@ const TransactionOverview = () => {
                 <Typography variant="h4" mb={2}>
                     Transaction Overview
                 </Typography>
-                <Stack direction="row" spacing={2} justifyContent="center" alignItems="center">
+                <Stack direction={{xs: "column", sm: "row"}} spacing={2} justifyContent="center" alignItems="center">
                     <Card variant="outlined">
-                        <CardItem title={"Awaiting Approval"} num={stats?.awaiting_approval} color="primary"></CardItem>
+                        <CardItem title="Awaiting Approval" num={stats?.AwaitingApproval} color="warning.main"/>
                     </Card>
                     <Card variant="outlined">
-                        <CardItem title={"Successfully"} num={stats?.approved} color="info"></CardItem>
+                        <CardItem title="Approved" num={stats?.StatusApproved} color="success.main"/>
                     </Card>
                     <Card variant="outlined">
-                        <CardItem title={"Rejected"} num={stats?.rejected} color="error"></CardItem>
+                        <CardItem title="Rejected" num={stats?.StatusRejected} color="error.main"/>
                     </Card>
                 </Stack>
             </CardContent>
